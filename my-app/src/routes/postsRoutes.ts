@@ -13,7 +13,7 @@ export const dummyPosts: Posts[] = [
 
 const createPostSchema = z.object({
   title: z.string(),
-  amount: z.number(),
+  content: z.string(),
 });
 
 export const postsRoutes = new Hono()
