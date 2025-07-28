@@ -1,7 +1,11 @@
 import { Hono } from "hono";
-import { Posts, dummyPosts, createPostSchema } from "./postsRoutes";
+import { Posts } from "./postsRoutes";
+import { createPostSchema } from "../model/userSchemas";
 import { email, z } from "zod";
-type User = {
+import { dummyData, dummyPosts } from "../data";
+import { zValidator } from "@hono/zod-validator";
+
+export type User = {
   email: string;
   username: string;
   posts: Posts[];
@@ -10,18 +14,17 @@ type User = {
 const createUserSchema = z.object({
   email: z.email("This should be a valid email"),
   username: z.string("Enter a valid Username"),
-  posts: z.array(createPostSchema),
+  posts: z.array(createPostSchema).optional(),
 });
-const dummydata: User[] = [
-  { email: "Basilawni123@gmail.com ", username: "Basil", posts: dummyPosts },
-];
 
 export const userRoutes = new Hono()
   .get("/", (c) => {
-    return c.json({ users: [] });
+    return c.json({ users: dummyData });
   })
-  .post("/", (c) => {
-    return c.json({});
+  .post("/createUser", zValidator("json", createUserSchema), (c) => {
+    const user = c.req.valid("json");
+    dummyData.push({ ...user, posts: [] });
+    return c.json(user);
   });
 
 /**
