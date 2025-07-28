@@ -12,8 +12,8 @@ export const dummyPosts: Posts[] = [
 ];
 
 const createPostSchema = z.object({
-  title: z.string(),
-  content: z.string(),
+  title: z.string("Title should be a string"),
+  content: z.string("Content should be a string"),
 });
 
 export const postsRoutes = new Hono()
@@ -27,6 +27,7 @@ export const postsRoutes = new Hono()
       console.log(post);
       return c.json(post);
     } catch (e) {
-      return c.json({ message: "Invalid Data" }, 500);
+      console.log(`Error ${e}`);
+      return c.json({ message: e }, 500);
     }
   });
