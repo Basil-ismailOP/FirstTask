@@ -1,7 +1,5 @@
 import { Hono } from "hono";
 import { Posts } from "./postsRoutes";
-import { createPostSchema } from "../model/postSchemas";
-import { email, z } from "zod";
 import { dummyData, dummyPosts } from "../data";
 import { zValidator } from "@hono/zod-validator";
 import { createUserSchema, updateUserSchema } from "../model/userScehams";
