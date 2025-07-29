@@ -5,6 +5,7 @@ import { dummyPosts } from "../data";
 import { createPostSchema, updatePostSchema } from "../model/postSchemas";
 import { db } from "../db";
 import { postsTable } from "../db/schema";
+
 export type Posts = {
   id: string;
   content: string;

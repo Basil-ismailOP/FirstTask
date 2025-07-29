@@ -3,7 +3,7 @@ import { Posts } from "./postsRoutes";
 import { zValidator } from "@hono/zod-validator";
 import { createUserSchema, updateUserSchema } from "../model/userScehams";
 import { db } from "../db";
-import { usersTable } from "../db/schema";
+import { postsTable, usersTable } from "../db/schema";
 import { eq } from "drizzle-orm";
 
 export type User = {
@@ -19,6 +19,21 @@ export const userRoutes = new Hono()
       return c.json({ users });
     } catch (error) {
       return c.json({ message: "Failed to load users", error }, 500);
+    }
+  })
+  .get("/get-users-posts/:id", async (c) => {
+    try {
+      const id = parseInt(c.req.param("id"));
+      const posts = await db
+        .select()
+        .from(postsTable)
+        .where(eq(postsTable.userId, id));
+
+      if (!posts.length)
+        return c.json({ message: "No posts found for this user" }, 404);
+      return c.json({ message: "Found  all posts successfully ", posts });
+    } catch (error) {
+      return c.json({ message: "Something went wrong fetching posts" }, 500);
     }
   })
   .post("/create-user", zValidator("json", createUserSchema), async (c) => {
