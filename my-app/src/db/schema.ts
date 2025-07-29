@@ -13,7 +13,10 @@ export const postsTable = pgTable("posts", {
   title: varchar({ length: 255 }).notNull(),
   userId: integer()
     .notNull()
-    .references(() => usersTable.id),
+    .references(() => usersTable.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
 });
 
 export const userRelation = relations(usersTable, ({ many }) => ({

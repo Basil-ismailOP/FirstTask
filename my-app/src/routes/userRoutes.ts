@@ -1,10 +1,10 @@
 import { Hono } from "hono";
 import { Posts } from "./postsRoutes";
-import { dummyData, dummyPosts } from "../data";
 import { zValidator } from "@hono/zod-validator";
 import { createUserSchema, updateUserSchema } from "../model/userScehams";
 import { db } from "../db";
 import { usersTable } from "../db/schema";
+import { eq } from "drizzle-orm";
 
 export type User = {
   email: string;
@@ -37,35 +37,51 @@ export const userRoutes = new Hono()
     }
   })
   .patch(
-    "/update-user/:username",
+    "/update-user/:id",
     zValidator("json", updateUserSchema),
-    (c) => {
-      const username = c.req.param("username");
-      const data = c.req.valid("json");
+    async (c) => {
+      try {
+        const id = parseInt(c.req.param("id"));
+        if (isNaN(id)) return c.json({ message: "Invalid User Id" }, 400);
 
-      const user = dummyData.find((user) => {
-        user.username == username;
-      });
+        const updateData = c.req.valid("json");
+        if (!Object.keys(updateData).length)
+          return c.json({ message: "No data provided" }, 400);
 
-      if (!user) return c.json({ message: "No user with such name" }, 404);
+        const updatedUser = await db
+          .update(usersTable)
+          .set(updateData)
+          .where(eq(usersTable.id, id))
+          .returning();
 
-      if ("email" in data) user.email = (data.email as string) ?? user.email;
+        if (!updatedUser.length)
+          return c.json({ message: "User not found " }, 404);
 
-      if ("username" in data)
-        user.username = (data.username as string) ?? user.username;
-
-      return c.json({ message: "Updated successfully", user });
+        return c.json({ message: "Updated user Successfuly" }, 200);
+      } catch (error) {
+        return c.json({ message: "Couldn't update the user" }, 500);
+      }
     }
   )
-  .delete("/delete-user/:username", (c) => {
-    const username = c.req.param("username");
-    const index = dummyData.findIndex((user) => {
-      user.username == username;
-    });
-    if (!index) return c.json({ message: "No user found to delete" }, 404);
-    dummyData.splice(index, 1);
+  .delete("/delete-user/:id", async (c) => {
+    try {
+      const id = parseInt(c.req.param("id"));
+      if (isNaN(id)) return c.json({ message: "id is invalid" }, 400);
 
-    return c.json({ message: "Deleted Successfully " }, 200);
+      const deleteUser = await db
+        .delete(usersTable)
+        .where(eq(usersTable.id, id))
+        .returning();
+
+      if (!deleteUser.length)
+        return c.json({ message: "User not found " }, 404);
+      return c.json({
+        message: "User deleted Successfully ",
+        deleteUser: deleteUser[0],
+      });
+    } catch (error) {
+      return c.json({ message: "Something went wrong", error }, 500);
+    }
   });
 
 /**
