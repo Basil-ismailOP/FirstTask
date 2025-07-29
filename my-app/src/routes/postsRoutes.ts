@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
 import { dummyPosts } from "../data";
-import { createPostSchema, updatePostSchema } from "../model/userSchemas";
+import { createPostSchema, updatePostSchema } from "../model/postSchemas";
 export type Posts = {
   id: string;
   content: string;

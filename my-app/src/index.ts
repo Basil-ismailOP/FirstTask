@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { postsRoutes } from "./routes/postsRoutes";
 import { userRoutes } from "./routes/userRoutes";
-import { drizzle } from "drizzle-orm/singlestore/driver";
+import { drizzle } from "drizzle-orm/node-postgres"
 import { configDotenv } from "dotenv";
 
 const db = drizzle(process.env.POSTGRESS_CONNECTION as string);
