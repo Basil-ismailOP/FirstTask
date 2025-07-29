@@ -3,6 +3,8 @@ import { Posts } from "./postsRoutes";
 import { dummyData, dummyPosts } from "../data";
 import { zValidator } from "@hono/zod-validator";
 import { createUserSchema, updateUserSchema } from "../model/userScehams";
+import { db } from "../db";
+import { usersTable } from "../db/schema";
 
 export type User = {
   email: string;
@@ -11,13 +13,28 @@ export type User = {
 };
 
 export const userRoutes = new Hono()
-  .get("/", (c) => {
-    return c.json({ users: dummyData });
+  .get("/", async (c) => {
+    try {
+      const users = await db.select().from(usersTable);
+      return c.json({ users });
+    } catch (error) {
+      return c.json({ message: "Failed to load users", error }, 500);
+    }
   })
-  .post("/create-user", zValidator("json", createUserSchema), (c) => {
-    const user = c.req.valid("json");
-    dummyData.push({ ...user, posts: [] });
-    return c.json(user);
+  .post("/create-user", zValidator("json", createUserSchema), async (c) => {
+    try {
+      const userData = c.req.valid("json");
+      const newUser = await db
+        .insert(usersTable)
+        .values({
+          email: userData.email,
+          username: userData.username,
+        })
+        .returning();
+      return c.json({ message: "User Created Successfully" });
+    } catch (error) {
+      return c.json({ message: "Error while inserting new user", error }, 500);
+    }
   })
   .patch(
     "/update-user/:username",

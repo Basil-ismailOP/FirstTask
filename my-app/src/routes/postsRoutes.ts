@@ -3,26 +3,32 @@ import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
 import { dummyPosts } from "../data";
 import { createPostSchema, updatePostSchema } from "../model/postSchemas";
+import { db } from "../db";
+import { postsTable } from "../db/schema";
 export type Posts = {
   id: string;
   content: string;
   title: string;
 };
 
-//Question yet to be asked, about the png, whether and when to get one
-
 export const postsRoutes = new Hono()
-  .get("/", (c) => {
-    return c.json({ posts: dummyPosts });
+  .get("/", async (c) => {
+    try {
+      const posts = await db.select().from(postsTable);
+      return c.json({ posts });
+    } catch (e) {
+      return c.json({ message: "Failed to fetch posts", error: e }, 500);
+    }
   })
 
-  .post("/", zValidator("json", createPostSchema), (c) => {
-    const data = c.req.valid("json");
-
-    dummyPosts.push({ id: crypto.randomUUID(), ...data });
-    console.log(data);
-    return c.json(data);
-  })
+  .post(
+    "/create-post/:userid",
+    zValidator("json", createPostSchema),
+    async (c) => {
+      try {
+      } catch (error) {}
+    }
+  )
 
   .patch("/update-post/:id", zValidator("json", updatePostSchema), (c) => {
     const id = c.req.param("id");

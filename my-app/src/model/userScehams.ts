@@ -4,7 +4,6 @@ import { z } from "zod/v4";
 export const createUserSchema = z.object({
   email: z.email("This should be a valid email"),
   username: z.string("Enter a valid Username"),
-  posts: z.array(createPostSchema).optional(),
 });
 
 export const updateUserSchema = z.object({
