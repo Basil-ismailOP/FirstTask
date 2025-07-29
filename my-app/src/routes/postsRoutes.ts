@@ -14,7 +14,19 @@ export const postsRoutes = new Hono()
       return c.json({ message: "Failed to fetch posts", error: e }, 500);
     }
   })
+  .get("/get-post/:userid/:postid", async (c) => {
+    try {
+      const userid = parseInt(c.req.param("userid"));
+      const postid = parseInt(c.req.param("postid"));
 
+      if (isNaN(userid) || isNaN(postid))
+        return c.json({ message: "Invalid IDs" }, 400);
+      const post = await db
+        .select()
+        .from(postsTable)
+        .where(and(eq(postsTable.userId, userid), eq(postsTable.id, postid)));
+    } catch (error) {}
+  })
   .post("/create-post/:id", zValidator("json", createPostSchema), async (c) => {
     try {
       const userId = parseInt(c.req.param("id"));
