@@ -1,16 +1,9 @@
 import { Hono } from "hono";
-import { Posts } from "./postsRoutes";
 import { zValidator } from "@hono/zod-validator";
 import { createUserSchema, updateUserSchema } from "../model/userScehams";
 import { db } from "../db";
 import { postsTable, usersTable } from "../db/schema";
 import { eq } from "drizzle-orm";
-
-export type User = {
-  email: string;
-  username: string;
-  posts: Posts[];
-};
 
 export const userRoutes = new Hono()
   .get("/", async (c) => {

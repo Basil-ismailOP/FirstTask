@@ -1,16 +1,9 @@
 import { Hono } from "hono";
-import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
-import { dummyPosts } from "../data";
 import { createPostSchema, updatePostSchema } from "../model/postSchemas";
 import { db } from "../db";
 import { postsTable } from "../db/schema";
-
-export type Posts = {
-  id: string;
-  content: string;
-  title: string;
-};
+import { and, eq } from "drizzle-orm";
 
 export const postsRoutes = new Hono()
   .get("/", async (c) => {
@@ -22,39 +15,68 @@ export const postsRoutes = new Hono()
     }
   })
 
-  .post(
-    "/create-post/:userid",
-    zValidator("json", createPostSchema),
-    async (c) => {
-      try {
-      } catch (error) {}
+  .post("/create-post/:id", zValidator("json", createPostSchema), async (c) => {
+    try {
+      const userId = parseInt(c.req.param("id"));
+      if (isNaN(userId)) return c.json({ message: "Not a valid ID" }, 400);
+      const postData = c.req.valid("json");
+      const newPost = await db
+        .insert(postsTable)
+        .values({ title: postData.title, content: postData.content, userId })
+        .returning();
+      return c.json({ message: "Post uploaded Successfully", newPost });
+    } catch (error) {
+      return c.json({ message: "Something went wrong creating new post" }, 500);
     }
-  )
-
-  .patch("/update-post/:id", zValidator("json", updatePostSchema), (c) => {
-    const id = c.req.param("id");
-    const postModified = c.req.valid("json");
-    const post = dummyPosts.find((p) => {
-      return p.id === id;
-    });
-    if (!post) return c.json({ message: "No item with such ID" }, 404);
-
-    if ("content" in postModified)
-      post.content = (postModified.content as string) ?? post.content;
-
-    if ("title" in postModified)
-      post.title = (postModified.title as string) ?? post.title;
-
-    return c.json(post, 201);
   })
 
-  .delete("/delete-post/:id", (c) => {
-    const id = c.req.param("id");
-    const index = dummyPosts.findIndex((p) => p.id === id);
-    if (!index) return c.json({ message: "no item found" }, 404);
+  .patch(
+    "/update-post/:userid/:postid",
+    zValidator("json", updatePostSchema),
+    async (c) => {
+      try {
+        const userId = parseInt(c.req.param("userid"));
+        const postId = parseInt(c.req.param("postid"));
 
-    dummyPosts.splice(index, 1);
-    return c.json({ message: "Post deleted Successfully", dummyPosts }, 200);
+        if (isNaN(userId) || isNaN(postId))
+          return c.json({ message: "Invalid credentials" }, 400);
+
+        const updatedPostData = c.req.valid("json");
+        const updatePost = await db
+          .update(postsTable)
+          .set(updatedPostData)
+          .where(and(eq(postsTable.userId, userId), eq(postsTable.id, postId)))
+          .returning();
+        if (!updatePost.length)
+          return c.json({ message: "No post found to update" }, 404);
+        return c.json({ message: "Post updated Successfully " }, 200);
+      } catch (error) {
+        return c.json(
+          { message: "Something went wrong while updating the post" },
+          500
+        );
+      }
+    }
+  )
+  .delete("/delete-post/:userid/:postid", async (c) => {
+    try {
+      const userId = parseInt(c.req.param("userid"));
+      const postId = parseInt(c.req.param("postid"));
+
+      if (isNaN(postId) || isNaN(userId))
+        return c.json({ message: "Invalid Credentials" }, 400);
+
+      const deletedPost = await db
+        .delete(postsTable)
+        .where(and(eq(postsTable.id, postId), eq(postsTable.userId, userId)))
+        .returning();
+      if (!deletedPost.length)
+        return c.json({ message: "No post found to delete" }, 404);
+
+      return c.json({ message: "Post deleted successfully", deletedPost }, 200);
+    } catch (error) {
+      return c.json({ message: "Something went wrong" }, 500);
+    }
   });
 
 //   .delete("/delete-post/:id", (c) => {});
