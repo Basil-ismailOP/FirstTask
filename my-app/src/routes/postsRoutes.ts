@@ -25,7 +25,12 @@ export const postsRoutes = new Hono()
         .select()
         .from(postsTable)
         .where(and(eq(postsTable.userId, userid), eq(postsTable.id, postid)));
-    } catch (error) {}
+      if (!post.length) return c.json({ message: "No post found" }, 404);
+
+      return c.json(post);
+    } catch (error) {
+      return c.json({ message: "Something went wrong" }, 500);
+    }
   })
   .post("/create-post/:id", zValidator("json", createPostSchema), async (c) => {
     try {
