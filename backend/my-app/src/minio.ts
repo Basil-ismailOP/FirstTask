@@ -4,11 +4,12 @@ import { Client } from "minio";
 export const minioClient = new Client({
   endPoint: "localhost",
   port: 9000,
+  useSSL: false,
   accessKey: process.env.MINIO_ACCESS_KEY!,
   secretKey: process.env.MINIO_SECRET_KEY!,
 });
 
-export const BUCKET_NAME = process.env.MINIO_BUCKET_NAME || "dummy";
+export const BUCKET_NAME = process.env.MINIO_BUCKET_NAE || "dummy";
 
 export const initializeBucket = async () => {
   try {

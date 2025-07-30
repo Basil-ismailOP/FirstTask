@@ -4,7 +4,10 @@ import { createPostSchema, updatePostSchema } from "../model/postSchemas";
 import { db } from "../db";
 import { postsTable } from "../db/schema";
 import { and, eq } from "drizzle-orm";
+import { uploadImageToMinio, deleteImageFromMinio } from "../minioHelpers";
+import { initializeBucket } from "../minio";
 
+initializeBucket();
 export const postsRoutes = new Hono()
   .get("/", async (c) => {
     try {
@@ -36,7 +39,6 @@ export const postsRoutes = new Hono()
     try {
       const userId = parseInt(c.req.param("userid"));
       if (isNaN(userId)) return c.json({ message: "Invalid ID" }, 400);
-
       const posts = await db
         .select()
         .from(postsTable)
@@ -53,7 +55,10 @@ export const postsRoutes = new Hono()
       const userId = parseInt(c.req.param("id"));
       if (isNaN(userId)) return c.json({ message: "Not a valid ID" }, 400);
       const postData = c.req.valid("form");
-
+      let imageUrl: string | null = null;
+      if (postData.image) {
+        imageUrl = await uploadImageToMinio(postData.image!);
+      }
       const newPost = await db
         .insert(postsTable)
         .values({ title: postData.title, content: postData.content, userId })
