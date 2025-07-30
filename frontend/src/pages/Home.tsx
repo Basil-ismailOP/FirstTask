@@ -132,7 +132,17 @@ function AddPost({
     </Dialog>
   );
 }
-function DeleteButton({ id, userId }: { id: number; userId: number }) {
+function DeleteButton({
+  id,
+  userId,
+  open,
+  setOpen,
+}: {
+  id: number;
+  userId: number;
+  open: boolean;
+  setOpen: (arg0: boolean) => void;
+}) {
   const handleDelete = async () => {
     try {
       const res = await fetch(
@@ -145,6 +155,7 @@ function DeleteButton({ id, userId }: { id: number; userId: number }) {
         throw new Error(
           `Somethingwent wrong while deleting HTTP ${res.status} `
         );
+      setOpen(false);
     } catch (error) {
       console.error(error);
     }
@@ -156,13 +167,17 @@ function Posts({
   posts,
   name,
   userId,
+  open,
+  setOpen,
 }: {
   posts: Post[];
   name: string;
   userId: number;
+  open: boolean;
+  setOpen: (arg0: boolean) => void;
 }) {
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger>
         <Button className="hover:cursor-pointer hover:bg-gray-700">
           View Posts
@@ -175,7 +190,12 @@ function Posts({
             <div key={post.id} className="border-b py-4 last:border-b-0">
               <div className="flex justify-between">
                 <h5 className="font-semibold">{post.title}</h5>
-                <DeleteButton id={post.id} userId={userId} />
+                <DeleteButton
+                  id={post.id}
+                  userId={userId}
+                  open={open}
+                  setOpen={setOpen}
+                />
               </div>
               <div className=" relative w-full  overflow-hidden rounded-lg"></div>
               <Skeleton className="retlative   m-auto  my-3.5 h-[200px] bg-gray-400 w-[250px]" />
@@ -189,6 +209,7 @@ function Posts({
 }
 function Row({ id, name, email }: { id: number; name: string; email: string }) {
   const [posts, setposts] = useState<Post[]>();
+  const [open, setOpen] = useState(false);
   const fetchPosts = useCallback(async () => {
     try {
       const res = await fetch(
@@ -204,7 +225,7 @@ function Row({ id, name, email }: { id: number; name: string; email: string }) {
   }, [id]);
   useEffect(() => {
     fetchPosts();
-  }, [fetchPosts]);
+  }, [fetchPosts, open]);
 
   return (
     <TableRow>
@@ -212,7 +233,15 @@ function Row({ id, name, email }: { id: number; name: string; email: string }) {
       <TableCell>{email}</TableCell>
       <TableCell>
         {" "}
-        {posts && <Posts posts={posts} name={name} userId={id} />}
+        {posts && (
+          <Posts
+            posts={posts}
+            name={name}
+            open={open}
+            setOpen={setOpen}
+            userId={id}
+          />
+        )}
         <AddPost userId={id} onPostCreated={fetchPosts} />
       </TableCell>
     </TableRow>
