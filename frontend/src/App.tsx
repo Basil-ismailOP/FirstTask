@@ -2,56 +2,54 @@ import { Routes, Route, Link } from "react-router-dom";
 import Home from "./pages/Home";
 import CreateUser from "./pages/CreateUser";
 import DeleteUser from "./pages/DeleteUser";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuIndicator,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-  NavigationMenuViewport,
-} from "@/components/ui/navigation-menu";
-import { useState, useEffect } from "react";
-import { User } from "lucide-react";
-
+import { useState, useEffect, useCallback } from "react";
+import { Button } from "./components/ui/button";
 function App() {
   const [users, setUsers] = useState([]);
+  const fetchUsers = useCallback(async () => {
+    try {
+      const res = await fetch("http://localhost:3000/api/user");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-  useEffect(() => {
-    async function fetchUsers() {
-      try {
-        const res = await fetch("http://localhost:3000/api/user");
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
 
-        const data = await res.json();
-
-        setUsers(data["users"]);
-        console.log(data);
-      } catch (error) {
-        console.log(error);
-      }
+      setUsers(data["users"]);
+      console.log(data);
+    } catch (error) {
+      console.log(error);
     }
-    fetchUsers();
   }, []);
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   return (
     <>
       <div className="max-w-3xl mt-10  m-auto">
         <nav className="grid grid-cols-2 w-full justify-between mb-4 w-fulls">
           <div className=" inline-flex justify-start">
-            <Link className="1" to="/">
-              Home
+            <Link className="font-bold text-2xl" to="/">
+              User Management
             </Link>
           </div>
           <div className="flex justify-end gap-2.5">
-            <Link to="/create-user">Create user</Link>
-            <Link to="/delete-user">Delete user</Link>
+            <Link to="/create-user">
+              <Button>Create user</Button>
+            </Link>
+            <Link to="/delete-user">
+              <Button>Delete user</Button>
+            </Link>
           </div>
         </nav>
         <Routes>
-          <Route path="/" element={<Home users={users} />} />
-          <Route path="/create-user" element={<CreateUser />} />
+          <Route
+            path="/"
+            element={<Home users={users} refetchUsers={fetchUsers} />}
+          />
+          <Route
+            path="/create-user"
+            element={<CreateUser onUserCreated={fetchUsers} />}
+          />
           <Route path="/delete-user" element={<DeleteUser />} />
         </Routes>
       </div>

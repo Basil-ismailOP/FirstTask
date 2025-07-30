@@ -191,7 +191,7 @@ function Row({ id, name, email }: { id: number; name: string; email: string }) {
     </TableRow>
   );
 }
-export default function Home({ users }: HomeProps) {
+export default function Home({ users, refetchUsers }: HomeProps) {
   return (
     <>
       <Table className="text-center">
@@ -204,9 +204,9 @@ export default function Home({ users }: HomeProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users?.map((user, index) => (
+          {users?.map((user) => (
             <Row
-              key={index}
+              key={user.id}
               id={user.id}
               name={user.username}
               email={user.email}
