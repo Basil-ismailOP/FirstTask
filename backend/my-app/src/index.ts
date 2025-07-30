@@ -2,10 +2,8 @@ import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { postsRoutes } from "./routes/postsRoutes";
 import { userRoutes } from "./routes/userRoutes";
-import { drizzle } from "drizzle-orm/node-postgres";
 import "dotenv/config";
-import { db } from "./db";
-import { usersTable } from "./db/schema";
+
 import { cors } from "hono/cors";
 
 const app = new Hono();

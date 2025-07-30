@@ -53,6 +53,7 @@ export const postsRoutes = new Hono()
       const userId = parseInt(c.req.param("id"));
       if (isNaN(userId)) return c.json({ message: "Not a valid ID" }, 400);
       const postData = c.req.valid("form");
+
       const newPost = await db
         .insert(postsTable)
         .values({ title: postData.title, content: postData.content, userId })
