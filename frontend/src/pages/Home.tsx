@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 interface User {
@@ -162,7 +162,7 @@ function Posts({ posts, name }: { posts: Post[]; name: string }) {
 }
 function Row({ id, name, email }: { id: number; name: string; email: string }) {
   const [posts, setposts] = useState<Post[]>();
-  async function fetchPosts() {
+  const fetchPosts = useCallback(async () => {
     try {
       const res = await fetch(
         `http://localhost:3000/api/posts/get-posts/${id}`
@@ -174,10 +174,10 @@ function Row({ id, name, email }: { id: number; name: string; email: string }) {
     } catch (error) {
       console.log(error);
     }
-  }
+  }, [id]);
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, [fetchPosts]);
 
   return (
     <TableRow>
