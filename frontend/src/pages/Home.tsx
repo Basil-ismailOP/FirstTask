@@ -18,7 +18,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
-
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 interface User {
   id: number;
   username: string;
@@ -29,24 +30,126 @@ interface Post {
   id: number;
   title: string;
   content: string;
+  onCreated: () => void;
 }
 
 interface HomeProps {
   users: User[];
 }
 
-function Posts({ posts }: { posts: Post[] }) {
+function AddPost({
+  userId,
+  onPostCreated,
+}: {
+  userId: number;
+  onPostCreated: () => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [image, setImage] = useState<File | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("content", content);
+
+    if (image) formData.append("image", image);
+
+    try {
+      const res = await fetch(
+        `http://localhost:3000/api/posts/create-post/${userId}`,
+        { method: "POST", body: formData }
+      );
+      if (!res.ok) throw new Error(`Status ${res.status}`);
+
+      setTitle("");
+      setImage(null);
+      setContent("");
+      setOpen(false);
+      onPostCreated();
+      //TODO FINISH THIS HANDLER
+    } catch (e) {
+      setError(e as string);
+      console.log(error);
+    }
+  }
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger>
+        <Button onClick={() => setOpen(true)} className="m-1.5">
+          +
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader className="flesx m-auto font-bold">
+          <DialogTitle> New Post</DialogTitle>
+          <DialogDescription>Fill in infos</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="email" className="mb-1.5 text-lg">
+              Title
+            </Label>
+            <Input
+              type="text"
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Title"
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="email" className="mb-1.5 text-lg">
+              Content
+            </Label>
+            <Input
+              type="text"
+              id="content"
+              placeholder="content"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              required
+            />
+          </div>
+          <div className="grid w-full max-w-sm items-center gap-3">
+            <Label htmlFor="picture">Picture</Label>
+            <Input
+              id="picture"
+              type="file"
+              accept="image/*"
+              onChange={(e) => setImage(e.target.files?.[0] ?? null)}
+            />
+          </div>
+          <div className="flex justify-end">
+            <Button type="submit">Upload</Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Posts({ posts, name }: { posts: Post[]; name: string }) {
   return (
     <Dialog>
       <DialogTrigger>
-        <Button>View Posts</Button>
+        <Button className="hover:cursor-pointer hover:bg-gray-700">
+          View Posts
+        </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>Posts</DialogHeader>
+        <DialogHeader className="text-2xl font-bold">{`${name}'s Posts`}</DialogHeader>
         <div className="space-y-4">
           {posts.map((post) => (
-            <div key={post.id} className="border-b pb-4 last:border-b-0">
-              <h3 className="font-bold">{post.title}</h3>
+            <div key={post.id} className="border-b py-4 last:border-b-0">
+              <div className="flex justify-between">
+                <h5 className="font-semibold">{post.title}</h5>
+                <Button> delete </Button>
+              </div>
               <div className=" relative w-full  overflow-hidden rounded-lg"></div>
               <Skeleton className="retlative   m-auto  my-3.5 h-[200px] bg-gray-400 w-[250px]" />
               <p className="text-center font-stretch-75%">{post.content}</p>
@@ -59,21 +162,20 @@ function Posts({ posts }: { posts: Post[] }) {
 }
 function Row({ id, name, email }: { id: number; name: string; email: string }) {
   const [posts, setposts] = useState<Post[]>();
-
-  useEffect(() => {
-    async function fetchPosts() {
-      try {
-        const res = await fetch(
-          `http://localhost:3000/api/posts/get-posts/${id}`
-        );
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        setposts(data["posts"]);
-        console.log(data);
-      } catch (error) {
-        console.log(error);
-      }
+  async function fetchPosts() {
+    try {
+      const res = await fetch(
+        `http://localhost:3000/api/posts/get-posts/${id}`
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setposts(data["posts"]);
+      console.log(data);
+    } catch (error) {
+      console.log(error);
     }
+  }
+  useEffect(() => {
     fetchPosts();
   }, []);
 
@@ -83,7 +185,8 @@ function Row({ id, name, email }: { id: number; name: string; email: string }) {
       <TableCell>{email}</TableCell>
       <TableCell>
         {" "}
-        {posts ? <Posts posts={posts} /> : "No posts found"}
+        {posts && <Posts posts={posts} name={name} />}
+        <AddPost userId={id} onPostCreated={fetchPosts} />
       </TableCell>
     </TableRow>
   );
