@@ -132,8 +132,35 @@ function AddPost({
     </Dialog>
   );
 }
+function DeleteButton({ id, userId }: { id: number; userId: number }) {
+  const handleDelete = async () => {
+    try {
+      const res = await fetch(
+        `http://localhost:3000/api/posts/delete-post/${userId}/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+      if (!res.ok)
+        throw new Error(
+          `Somethingwent wrong while deleting HTTP ${res.status} `
+        );
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  return <Button onClick={handleDelete}>delete</Button>;
+}
 
-function Posts({ posts, name }: { posts: Post[]; name: string }) {
+function Posts({
+  posts,
+  name,
+  userId,
+}: {
+  posts: Post[];
+  name: string;
+  userId: number;
+}) {
   return (
     <Dialog>
       <DialogTrigger>
@@ -148,7 +175,7 @@ function Posts({ posts, name }: { posts: Post[]; name: string }) {
             <div key={post.id} className="border-b py-4 last:border-b-0">
               <div className="flex justify-between">
                 <h5 className="font-semibold">{post.title}</h5>
-                <Button> delete </Button>
+                <DeleteButton id={post.id} userId={userId} />
               </div>
               <div className=" relative w-full  overflow-hidden rounded-lg"></div>
               <Skeleton className="retlative   m-auto  my-3.5 h-[200px] bg-gray-400 w-[250px]" />
@@ -185,7 +212,7 @@ function Row({ id, name, email }: { id: number; name: string; email: string }) {
       <TableCell>{email}</TableCell>
       <TableCell>
         {" "}
-        {posts && <Posts posts={posts} name={name} />}
+        {posts && <Posts posts={posts} name={name} userId={id} />}
         <AddPost userId={id} onPostCreated={fetchPosts} />
       </TableCell>
     </TableRow>
