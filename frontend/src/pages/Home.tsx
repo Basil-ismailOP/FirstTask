@@ -191,7 +191,7 @@ function Row({ id, name, email }: { id: number; name: string; email: string }) {
     </TableRow>
   );
 }
-export default function Home({ users, refetchUsers }: HomeProps) {
+export default function Home({ users }: HomeProps) {
   return (
     <>
       <Table className="text-center">

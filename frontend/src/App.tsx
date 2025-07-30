@@ -42,10 +42,7 @@ function App() {
           </div>
         </nav>
         <Routes>
-          <Route
-            path="/"
-            element={<Home users={users} refetchUsers={fetchUsers} />}
-          />
+          <Route path="/" element={<Home users={users} />} />
           <Route
             path="/create-user"
             element={<CreateUser onUserCreated={fetchUsers} />}
