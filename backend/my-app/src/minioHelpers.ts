@@ -45,6 +45,5 @@ export const deleteImageFromMinio = async (
     return null;
   } catch (error) {
     return `Error deleting image: ${error}`;
-    throw new Error("Couldn't delete an image " + error);
   }
 };

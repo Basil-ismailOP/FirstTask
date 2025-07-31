@@ -1,7 +1,6 @@
 import { describe, expect, it, mock, beforeEach } from "bun:test";
 import { Hono } from "hono";
 import { userRoutes } from "../../routes/userRoutes";
-import { email } from "zod";
 
 type User = {
   id: number;
@@ -183,6 +182,7 @@ describe("User Routes", () => {
           email: "test@test.com",
         },
       ];
+
       const mockUsersPost = [
         {
           id: 1,
