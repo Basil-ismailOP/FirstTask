@@ -79,7 +79,7 @@ export default function DeleteUser({
           <Button className="bg-red-700" onClick={handleDelete}>
             Yes
           </Button>
-          <Button> go back</Button>
+          <Button onClick={() => navigate("/")}> go back</Button>
         </div>
       </CardContent>
     </Card>
