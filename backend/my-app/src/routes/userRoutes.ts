@@ -62,10 +62,8 @@ export const userRoutes = new Hono()
           .set(updateData)
           .where(eq(usersTable.id, id))
           .returning();
-
         if (!updatedUser.length)
           return c.json({ message: "User not found " }, 404);
-
         return c.json({ message: "Updated user Successfuly" }, 200);
       } catch (error) {
         return c.json({ message: "Couldn't update the user" }, 500);
