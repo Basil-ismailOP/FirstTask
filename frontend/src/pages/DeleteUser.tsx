@@ -1,4 +1,4 @@
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import type { User } from "./Home";
 import {
   Card,
@@ -72,14 +72,22 @@ export default function DeleteUser({
         <h2 className="text-center font-bold text-lg">Are you sure?</h2>
         <h3 className="text-center mt-5 text-lg">User's info </h3>
         <div className="flex justify-around m-5">
-          <h4>User:{userToDelete?.username}</h4>
-          <h4>email:{userToDelete?.email}</h4>
+          <h4 className="font-bold">User:{userToDelete?.username}</h4>
+          <h4 className="font-bold">email:{userToDelete?.email}</h4>
         </div>
         <div className="flex justify-between">
-          <Button className="bg-red-700" onClick={handleDelete}>
+          <Button
+            className="bg-red-700 cursor-pointer hover:bg-red-300"
+            onClick={handleDelete}
+          >
             Yes
           </Button>
-          <Button onClick={() => navigate("/")}> go back</Button>
+          <Button
+            className="cursor-pointer hover:bg-gray-700"
+            onClick={() => navigate("/")}
+          >
+            go back
+          </Button>
         </div>
       </CardContent>
     </Card>

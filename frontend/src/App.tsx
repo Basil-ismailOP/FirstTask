@@ -26,7 +26,7 @@ function App() {
 
   return (
     <>
-      <div className="max-w-3xl mt-10  m-auto">
+      <div className="max-w-6xl mt-10  m-auto">
         <nav className="grid grid-cols-2 w-full justify-between mb-4 w-fulls">
           <div className=" inline-flex justify-start">
             <Link className="font-bold text-2xl" to="/">
@@ -35,7 +35,7 @@ function App() {
           </div>
           <div className="flex justify-end gap-2.5">
             <Link to="/create-user">
-              <Button>Create user</Button>
+              <Button className="cursor-pointer">Create user</Button>
             </Link>
           </div>
         </nav>

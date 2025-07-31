@@ -81,7 +81,10 @@ function AddPost({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger>
-        <Button onClick={() => setOpen(true)} className="m-1.5">
+        <Button
+          onClick={() => setOpen(true)}
+          className="m-1.5 cursor-pointer rounded-full"
+        >
           +
         </Button>
       </DialogTrigger>
@@ -244,7 +247,7 @@ function Row({ id, name, email }: { id: number; name: string; email: string }) {
       <TableCell>{name}</TableCell>
       <TableCell>{email}</TableCell>
       <TableCell>
-        {posts && (
+        {posts?.length ? (
           <Posts
             posts={posts}
             name={name}
@@ -252,7 +255,7 @@ function Row({ id, name, email }: { id: number; name: string; email: string }) {
             setOpen={setOpen}
             userId={id}
           />
-        )}
+        ) : null}
         <AddPost userId={id} onPostCreated={fetchPosts} />
       </TableCell>
     </TableRow>
@@ -261,7 +264,7 @@ function Row({ id, name, email }: { id: number; name: string; email: string }) {
 export default function Home({ users }: HomeProps) {
   return (
     <>
-      <Table className="text-center">
+      <Table className="text-center w-full">
         <TableCaption>Users and their posts</TableCaption>
         <TableHeader className="">
           <TableRow>
