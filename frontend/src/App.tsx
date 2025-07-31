@@ -4,6 +4,7 @@ import CreateUser from "./pages/CreateUser";
 import DeleteUser from "./pages/DeleteUser";
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "./components/ui/button";
+
 function App() {
   const [users, setUsers] = useState([]);
   const fetchUsers = useCallback(async () => {
@@ -36,9 +37,6 @@ function App() {
             <Link to="/create-user">
               <Button>Create user</Button>
             </Link>
-            <Link to="/delete-user">
-              <Button>Delete user</Button>
-            </Link>
           </div>
         </nav>
         <Routes>
@@ -47,7 +45,10 @@ function App() {
             path="/create-user"
             element={<CreateUser onUserCreated={fetchUsers} />}
           />
-          <Route path="/delete-user" element={<DeleteUser />} />
+          <Route
+            path="/delete-user/:userId"
+            element={<DeleteUser users={users} onUserDelete={fetchUsers} />}
+          />
         </Routes>
       </div>
     </>

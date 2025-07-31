@@ -20,7 +20,9 @@ import { Button } from "@/components/ui/button";
 import { useCallback, useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-interface User {
+import { Link } from "react-router-dom";
+
+export interface User {
   id: number;
   username: string;
   email: string;
@@ -30,6 +32,7 @@ interface Post {
   id: number;
   title: string;
   content: string;
+  imageKey: string;
   onCreated: () => void;
 }
 
@@ -70,7 +73,6 @@ function AddPost({
       setContent("");
       setOpen(false);
       onPostCreated();
-      //TODO FINISH THIS HANDLER
     } catch (e) {
       setError(e as string);
       console.log(error);
@@ -135,12 +137,10 @@ function AddPost({
 function DeleteButton({
   id,
   userId,
-  open,
   setOpen,
 }: {
   id: number;
   userId: number;
-  open: boolean;
   setOpen: (arg0: boolean) => void;
 }) {
   const handleDelete = async () => {
@@ -160,7 +160,11 @@ function DeleteButton({
       console.error(error);
     }
   };
-  return <Button onClick={handleDelete}>delete</Button>;
+  return (
+    <Button className="cursor-pointer" onClick={handleDelete}>
+      delete
+    </Button>
+  );
 }
 
 function Posts({
@@ -190,15 +194,18 @@ function Posts({
             <div key={post.id} className="border-b py-4 last:border-b-0">
               <div className="flex justify-between">
                 <h5 className="font-semibold">{post.title}</h5>
-                <DeleteButton
-                  id={post.id}
-                  userId={userId}
-                  open={open}
-                  setOpen={setOpen}
-                />
+                <DeleteButton id={post.id} userId={userId} setOpen={setOpen} />
               </div>
               <div className=" relative w-full  overflow-hidden rounded-lg"></div>
-              <Skeleton className="retlative   m-auto  my-3.5 h-[200px] bg-gray-400 w-[250px]" />
+              {post.imageKey ? (
+                <img
+                  className="m-auto w-[200px] h-[200px]"
+                  src={post.imageKey}
+                  alt={post.title}
+                />
+              ) : (
+                <Skeleton className="retlative   m-auto  my-3.5 h-[200px] bg-gray-400 w-[250px]" />
+              )}
               <p className="text-center font-stretch-75%">{post.content}</p>
             </div>
           ))}
@@ -217,7 +224,7 @@ function Row({ id, name, email }: { id: number; name: string; email: string }) {
       );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      setposts(data["posts"]);
+      setposts(data["posts"] || []);
       console.log(data);
     } catch (error) {
       console.log(error);
@@ -229,10 +236,14 @@ function Row({ id, name, email }: { id: number; name: string; email: string }) {
 
   return (
     <TableRow>
+      <TableCell>
+        <Link to={`/delete-user/${id}`}>
+          <Button className="bg-red-800 rounded-full">X</Button>
+        </Link>
+      </TableCell>
       <TableCell>{name}</TableCell>
       <TableCell>{email}</TableCell>
       <TableCell>
-        {" "}
         {posts && (
           <Posts
             posts={posts}
@@ -254,6 +265,7 @@ export default function Home({ users }: HomeProps) {
         <TableCaption>Users and their posts</TableCaption>
         <TableHeader className="">
           <TableRow>
+            <TableHead> </TableHead>
             <TableHead className="text-center w-[100px]">name</TableHead>
             <TableHead className="text-center">Email</TableHead>
             <TableHead className="text-center">View Posts</TableHead>
