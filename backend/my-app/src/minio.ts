@@ -9,7 +9,7 @@ export const minioClient = new Client({
   secretKey: process.env.MINIO_SECRET_KEY!,
 });
 
-export const BUCKET_NAME = process.env.MINIO_BUCKET_NAE || "dummy";
+export const BUCKET_NAME = process.env.MINIO_BUCKET_NAME || "dummy";
 
 export const initializeBucket = async () => {
   try {

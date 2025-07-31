@@ -1,5 +1,5 @@
 import { createPostSchema } from "./postSchemas";
-import { z } from "zod/v4";
+import { z } from "zod";
 
 export const createUserSchema = z.object({
   email: z.email("This should be a valid email"),
