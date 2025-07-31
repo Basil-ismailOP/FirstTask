@@ -17,10 +17,11 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export interface User {
   id: number;
@@ -50,34 +51,36 @@ function AddPost({
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [image, setImage] = useState<File | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const queryCient = useQueryClient();
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("content", content);
+  const submitMutation = useMutation({
+    mutationFn: async (e: React.FormEvent) => {
+      e.preventDefault();
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("content", content);
 
-    if (image) formData.append("image", image);
-
-    try {
+      if (image) formData.append("image", image);
       const res = await fetch(
         `http://localhost:3000/api/posts/create-post/${userId}`,
         { method: "POST", body: formData }
       );
       if (!res.ok) throw new Error(`Status ${res.status}`);
-
+    },
+    onSuccess: () => {
+      queryCient.invalidateQueries({ queryKey: ["posts", userId] });
       setTitle("");
       setImage(null);
       setContent("");
       setOpen(false);
       onPostCreated();
-    } catch (e) {
-      setError(e as string);
-      console.log(error);
-    }
-  }
+    },
+    onError: () => {
+      console.log("Delete Failed");
+    },
+  });
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger>
@@ -93,7 +96,7 @@ function AddPost({
           <DialogTitle> New Post</DialogTitle>
           <DialogDescription>Fill in infos</DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={(e) => submitMutation.mutate(e)} className="space-y-4">
           <div>
             <Label htmlFor="email" className="mb-1.5 text-lg">
               Title
@@ -146,8 +149,9 @@ function DeleteButton({
   userId: number;
   setOpen: (arg0: boolean) => void;
 }) {
-  const handleDelete = async () => {
-    try {
+  const queryClient = useQueryClient();
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
       const res = await fetch(
         `http://localhost:3000/api/posts/delete-post/${userId}/${id}`,
         {
@@ -158,13 +162,18 @@ function DeleteButton({
         throw new Error(
           `Somethingwent wrong while deleting HTTP ${res.status} `
         );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["posts", userId] });
       setOpen(false);
-    } catch (error) {
-      console.error(error);
-    }
-  };
+    },
+    onError: () => {
+      console.log("Delete Failed");
+    },
+  });
+
   return (
-    <Button className="cursor-pointer" onClick={handleDelete}>
+    <Button className="cursor-pointer" onClick={() => deleteMutation.mutate()}>
       delete
     </Button>
   );
@@ -218,24 +227,25 @@ function Posts({
   );
 }
 function Row({ id, name, email }: { id: number; name: string; email: string }) {
-  const [posts, setposts] = useState<Post[]>();
   const [open, setOpen] = useState(false);
-  const fetchPosts = useCallback(async () => {
-    try {
+  const {
+    data: posts = [],
+    isPending,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["posts", id],
+    queryFn: async () => {
       const res = await fetch(
         `http://localhost:3000/api/posts/get-posts/${id}`
       );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      setposts(data["posts"] || []);
-      console.log(data);
-    } catch (error) {
-      console.log(error);
-    }
-  }, [id]);
-  useEffect(() => {
-    fetchPosts();
-  }, [fetchPosts, open]);
+      return data["posts"] || [];
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
 
   return (
     <TableRow>
@@ -247,7 +257,11 @@ function Row({ id, name, email }: { id: number; name: string; email: string }) {
       <TableCell>{name}</TableCell>
       <TableCell>{email}</TableCell>
       <TableCell>
-        {posts?.length ? (
+        {isPending ? (
+          <div> Loading posts...</div>
+        ) : error ? (
+          <div> Error loading posts</div>
+        ) : posts?.length ? (
           <Posts
             posts={posts}
             name={name}
@@ -256,7 +270,7 @@ function Row({ id, name, email }: { id: number; name: string; email: string }) {
             userId={id}
           />
         ) : null}
-        <AddPost userId={id} onPostCreated={fetchPosts} />
+        <AddPost userId={id} onPostCreated={() => refetch()} />
       </TableCell>
     </TableRow>
   );

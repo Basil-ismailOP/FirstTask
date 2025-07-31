@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/card";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useMutation } from "@tanstack/react-query";
 export default function DeleteUser({
   users,
   onUserDelete,
@@ -22,11 +23,8 @@ export default function DeleteUser({
   const userToDelete = users.find(
     (user) => user.id === parseInt(userId || "0")
   );
-
-  const handleDelete = async () => {
-    if (!userId) return;
-
-    try {
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
       const res = await fetch(
         `http://localhost:3000/api/user/delete-user/${userId}`,
         {
@@ -34,16 +32,19 @@ export default function DeleteUser({
         }
       );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    },
+    onSuccess: () => {
       setSuccess(true);
       setError(false);
       setTimeout(() => {
         navigate("/");
       }, 2000);
       onUserDelete();
-    } catch (error) {
-      console.error(error);
-    }
-  };
+    },
+    onError: () => {
+      console.log("Something went wrong couldn't delete");
+    },
+  });
 
   if (sucess)
     return (
@@ -78,7 +79,7 @@ export default function DeleteUser({
         <div className="flex justify-between">
           <Button
             className="bg-red-700 cursor-pointer hover:bg-red-300"
-            onClick={handleDelete}
+            onClick={() => deleteMutation.mutate()}
           >
             Yes
           </Button>
