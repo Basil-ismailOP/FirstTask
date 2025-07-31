@@ -1,6 +1,7 @@
 import { describe, expect, it, mock, beforeEach } from "bun:test";
 import { Hono } from "hono";
 import { userRoutes } from "../../routes/userRoutes";
+import { request } from "http";
 
 type User = {
   id: number;
@@ -62,7 +63,35 @@ describe("Post Routes", () => {
     minioDeleteMock.deleteImageFromMinio.mockClear();
   });
   describe("GET /api/posts", () => {
-    it("/ Should get all posts stored in db", async () => {});
+    it("/ Should get all posts stored in db", async () => {
+      const fakePosts = [
+        {
+          id: 1,
+          title: "testPost",
+          content: "testContent",
+          imageKey: null,
+        },
+        {
+          id: 2,
+          title: "test2Post",
+          content: "testContent1",
+          imageKey: null,
+        },
+        {
+          id: 3,
+          title: "testPost3",
+          content: "testContent3",
+          imageKey: null,
+        },
+      ];
+      (mockDb.select as any).mockReturnValue(mockDb);
+      (mockDb.from as any).mockResolvedValue(fakePosts);
+      const res = await app.request("/api/posts");
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+    });
+
     it("/ Should handle DB dropdown ", async () => {});
     it("/get-post/:userid/:postid Should handle No user found", async () => {});
     it("/get-post/:userid/:postid Should handle missing post", async () => {});
@@ -70,6 +99,10 @@ describe("Post Routes", () => {
     it("/get-posts/:userid should get all posts by a specific user ", async () => {});
     it("/get-posts/:userid should handle no posts found", async () => {});
   });
-  describe("POST /api/posts", () => {});
+  //   describe("POST /api/posts", () => {
+  //     it("newTest", async () => {
+  //       const res = await app.request("/api/posts");
+  //     });
+  //   });
   describe("DELETE /api/posts", () => {});
 });
