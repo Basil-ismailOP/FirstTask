@@ -1,31 +1,52 @@
+import { keyframes } from "hono/css";
 import { minioClient, BUCKET_NAME } from "./minio";
 import { v4 as uuidv4 } from "uuid";
+import { success } from "zod";
 
-export const uploadImageToMinio = async (file: File): Promise<string> => {
+export const getImageUrl = async (key: string): Promise<string> => {
+  try {
+    const url = await minioClient.presignedGetObject(
+      BUCKET_NAME,
+      key,
+      24 * 60 * 60
+    );
+    return url;
+  } catch (error) {
+    return "";
+  }
+};
+export const uploadImageToMinio = async (
+  file: File
+): Promise<{ uniqueKey: string; url: string }> => {
   try {
     const fileExtension = file.name.split(".").pop();
-    const fileName = `newnaem.${fileExtension}`;
+    const uniqueKey = `images/${uuidv4()}.${fileExtension}`;
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    await minioClient.putObject(BUCKET_NAME, fileName, buffer, file.size, {
+    await minioClient.putObject(BUCKET_NAME, uniqueKey, buffer, file.size, {
       "Content-Type": file.type,
     });
-    return `http://${process.env.MINIO_ENDPOINT}:${process.env.MINIO_PORT}/${BUCKET_NAME}/${fileName}`;
+    const url = await getImageUrl(uniqueKey);
+    return { uniqueKey, url };
   } catch (error) {
     console.error(`Error uplodaing image: ${error}`);
     throw new Error("Failed to upload Image");
   }
 };
 
-export const deleteImageFromMinio = async (imageUrl: string): Promise<void> => {
+export const deleteImageFromMinio = async (
+  imageKey: string
+): Promise<string | null> => {
   try {
-    const filename = imageUrl.split("/").pop();
-    if (filename) {
-      await minioClient.removeObject(BUCKET_NAME, filename);
+    if (imageKey) {
+      await minioClient.removeObject(BUCKET_NAME, imageKey);
+      console.log(`Successfully deleted image: ${imageKey}`);
     }
+    return null;
   } catch (error) {
-    console.error("Error deleting image: ", error);
+    return `Error deleting image: ${error}`;
+    throw new Error("Couldn't delete an image " + error);
   }
 };

@@ -17,6 +17,7 @@ export const postsTable = pgTable("posts", {
       onDelete: "cascade",
       onUpdate: "cascade",
     }),
+  imageKey: varchar({ length: 255 }),
 });
 
 export const userRelation = relations(usersTable, ({ many }) => ({

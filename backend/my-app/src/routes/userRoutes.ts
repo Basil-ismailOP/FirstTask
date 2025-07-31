@@ -4,6 +4,7 @@ import { createUserSchema, updateUserSchema } from "../model/userScehams";
 import { db } from "../db";
 import { postsTable, usersTable } from "../db/schema";
 import { eq } from "drizzle-orm";
+import { deleteImageFromMinio } from "../minioHelpers";
 
 export const userRoutes = new Hono()
   .get("/", async (c) => {
@@ -76,6 +77,14 @@ export const userRoutes = new Hono()
       const id = parseInt(c.req.param("id"));
       if (isNaN(id)) return c.json({ message: "id is invalid" }, 400);
 
+      const deleteUserPosts = await db
+        .select({ imageKey: postsTable.imageKey })
+        .from(postsTable)
+        .where(eq(postsTable.userId, id));
+
+      for (let image of deleteUserPosts) {
+        if (image.imageKey) await deleteImageFromMinio(image.imageKey);
+      }
       const deleteUser = await db
         .delete(usersTable)
         .where(eq(usersTable.id, id))

@@ -4,7 +4,11 @@ import { createPostSchema, updatePostSchema } from "../model/postSchemas";
 import { db } from "../db";
 import { postsTable } from "../db/schema";
 import { and, eq } from "drizzle-orm";
-import { uploadImageToMinio, deleteImageFromMinio } from "../minioHelpers";
+import {
+  uploadImageToMinio,
+  deleteImageFromMinio,
+  getImageUrl,
+} from "../minioHelpers";
 import { initializeBucket } from "../minio";
 
 initializeBucket();
@@ -29,8 +33,9 @@ export const postsRoutes = new Hono()
         .from(postsTable)
         .where(and(eq(postsTable.userId, userid), eq(postsTable.id, postid)));
       if (!post.length) return c.json({ message: "No post found" }, 404);
-
-      return c.json(post);
+      if (post[0].imageKey)
+        post[0].imageKey = await getImageUrl(post[0].imageKey);
+      return c.json({ post });
     } catch (error) {
       return c.json({ message: "Something went wrong" }, 500);
     }
@@ -45,6 +50,11 @@ export const postsRoutes = new Hono()
         .where(eq(postsTable.userId, userId));
       if (!posts.length)
         return c.json({ message: "No posts found for this user" });
+      for (let post of posts) {
+        let imageUrl: string | null = null;
+        if (post.imageKey) imageUrl = await getImageUrl(post.imageKey);
+        post.imageKey = imageUrl;
+      }
       return c.json({ posts });
     } catch (error) {
       return c.json({ message: "No images Found" });
@@ -55,13 +65,17 @@ export const postsRoutes = new Hono()
       const userId = parseInt(c.req.param("id"));
       if (isNaN(userId)) return c.json({ message: "Not a valid ID" }, 400);
       const postData = c.req.valid("form");
-      let imageUrl: string | null = null;
-      if (postData.image) {
-        imageUrl = await uploadImageToMinio(postData.image!);
-      }
+      let uniqueKey: string | null = null;
+      if (postData.image)
+        ({ uniqueKey } = await uploadImageToMinio(postData.image!));
       const newPost = await db
         .insert(postsTable)
-        .values({ title: postData.title, content: postData.content, userId })
+        .values({
+          title: postData.title,
+          content: postData.content,
+          userId,
+          imageKey: uniqueKey,
+        })
         .returning();
       return c.json({ message: "Post uploaded Successfully", newPost });
     } catch (error) {
@@ -104,8 +118,17 @@ export const postsRoutes = new Hono()
 
       if (isNaN(postId) || isNaN(userId))
         return c.json({ message: "Invalid Credentials" }, 400);
-
       const deletedPost = await db
+        .select()
+        .from(postsTable)
+        .where(and(eq(postsTable.id, postId), eq(postsTable.userId, userId)));
+      let res: string | null = null;
+      if (deletedPost[0].imageKey)
+        res = await deleteImageFromMinio(deletedPost[0].imageKey);
+
+      if (res) throw new Error("Couldn't delete an image");
+
+      const deleteResult = await db
         .delete(postsTable)
         .where(and(eq(postsTable.id, postId), eq(postsTable.userId, userId)))
         .returning();
