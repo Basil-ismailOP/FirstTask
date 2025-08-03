@@ -80,7 +80,30 @@ describe("User Routes", () => {
       expect(mockDb.select).toHaveBeenCalledTimes(1);
       expect(mockDb.from).toHaveBeenCalledTimes(1);
     });
-    it("/get-users/posts/:id Should return all user's posts", async () => {
+
+    it("should handle database error when getting all users", async () => {
+      (mockDb.select as any).mockReturnValue(mockDb);
+      (mockDb.from as any).mockRejectedValue(new Error("Database error"));
+
+      const res = await app.request("/api/user");
+      expect(res.status).toBe(500);
+      const body = await res.json();
+      expect(body.message).toBe("Failed to load users");
+    });
+
+    it("should return empty array when no users exist", async () => {
+      (mockDb.select as any).mockReturnValue(mockDb);
+      (mockDb.from as any).mockResolvedValue([]);
+
+      const res = await app.request("/api/user");
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.users).toEqual([]);
+    });
+  });
+
+  describe("GET /api/user/get-users-posts/:id", () => {
+    it("Should return all user's posts", async () => {
       const mockPosts = [
         {
           id: 1,
@@ -97,6 +120,50 @@ describe("User Routes", () => {
       const res = await app.request("/api/user/get-users-posts/1");
       const body = await res.json();
       expect(body.posts).toEqual(mockPosts);
+    });
+
+    it("should handle no posts found for user", async () => {
+      (mockDb.select as any).mockReturnValue(mockDb);
+      (mockDb.from as any).mockReturnValue(mockDb);
+      (mockDb.where as any).mockResolvedValue([]);
+
+      const res = await app.request("/api/user/get-users-posts/1");
+      expect(res.status).toBe(404);
+      const body = await res.json();
+      expect(body.message).toBe("No posts found for this user");
+    });
+
+    it("should handle invalid user ID parameter", async () => {
+      (mockDb.select as any).mockReturnValue(mockDb);
+      (mockDb.from as any).mockReturnValue(mockDb);
+      (mockDb.where as any).mockResolvedValue([]);
+
+      const res = await app.request("/api/user/get-users-posts/abc");
+      expect(res.status).toBe(404);
+      const body = await res.json();
+      expect(body.message).toBe("No posts found for this user");
+    });
+
+    it("should handle database error when getting user posts", async () => {
+      (mockDb.select as any).mockReturnValue(mockDb);
+      (mockDb.from as any).mockReturnValue(mockDb);
+      (mockDb.where as any).mockRejectedValue(new Error("Database error"));
+
+      const res = await app.request("/api/user/get-users-posts/1");
+      expect(res.status).toBe(500);
+      const body = await res.json();
+      expect(body.message).toBe("Something went wrong fetching posts");
+    });
+
+    it("should handle zero user ID", async () => {
+      (mockDb.select as any).mockReturnValue(mockDb);
+      (mockDb.from as any).mockReturnValue(mockDb);
+      (mockDb.where as any).mockResolvedValue([]);
+
+      const res = await app.request("/api/user/get-users-posts/0");
+      expect(res.status).toBe(404);
+      const body = await res.json();
+      expect(body.message).toBe("No posts found for this user");
     });
   });
 
@@ -115,7 +182,8 @@ describe("User Routes", () => {
       const body = await res.json();
       expect(body.message).toBe("User Created Successfully");
     });
-    it("/create-user Should fail with invalid eamil", async () => {
+
+    it("/create-user Should fail with invalid email", async () => {
       const invalidUser = {
         username: "Ahmed ",
         email: "not a valid emaiil",
@@ -127,6 +195,44 @@ describe("User Routes", () => {
       });
       expect(res.status).toBe(400);
     });
+
+    it("/create-user Should fail with missing username", async () => {
+      const invalidUser = {
+        email: "valid@email.com",
+      };
+      const res = await app.request("/api/user/create-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(invalidUser),
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it("/create-user Should fail with empty username", async () => {
+      const invalidUser = {
+        username: "",
+        email: "valid@email.com",
+      };
+      const res = await app.request("/api/user/create-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(invalidUser),
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it("/create-user Should fail with missing email", async () => {
+      const invalidUser = {
+        username: "ValidUsername",
+      };
+      const res = await app.request("/api/user/create-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(invalidUser),
+      });
+      expect(res.status).toBe(400);
+    });
+
     it("/create-user Should handle DB error", async () => {
       const dummyNewUser = {
         username: "AHmed",
@@ -142,6 +248,15 @@ describe("User Routes", () => {
         body: JSON.stringify(dummyNewUser),
       });
       expect(res.status).toBe(500);
+    });
+
+    it("/create-user Should handle malformed JSON", async () => {
+      const res = await app.request("/api/user/create-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "invalid json",
+      });
+      expect(res.status).toBe(400);
     });
   });
   describe("PATCH /api/user", () => {
@@ -171,6 +286,142 @@ describe("User Routes", () => {
       const body = await res.json();
       expect(body.message).toBe("Updated user Successfuly");
       expect(res.status).toBe(200);
+    });
+
+    it("/update-user Should handle updating user's email", async () => {
+      const updatedUser = {
+        email: "newemail@test.com",
+      };
+      (mockDb.update as any).mockReturnValue(mockDb);
+      (mockDb.set as any).mockReturnValue(mockDb);
+      (mockDb.where as any).mockReturnValue(mockDb);
+      (mockDb.returning as any).mockResolvedValue([
+        {
+          id: 1,
+          username: "Ahmed",
+          email: updatedUser.email,
+        },
+      ]);
+      const res = await app.request("/api/user/update-user/1", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedUser),
+      });
+      const body = await res.json();
+      expect(body.message).toBe("Updated user Successfuly");
+      expect(res.status).toBe(200);
+    });
+
+    it("/update-user Should handle updating both username and email", async () => {
+      const updatedUser = {
+        username: "NewUsername",
+        email: "newemail@test.com",
+      };
+      (mockDb.update as any).mockReturnValue(mockDb);
+      (mockDb.set as any).mockReturnValue(mockDb);
+      (mockDb.where as any).mockReturnValue(mockDb);
+      (mockDb.returning as any).mockResolvedValue([
+        {
+          id: 1,
+          username: updatedUser.username,
+          email: updatedUser.email,
+        },
+      ]);
+      const res = await app.request("/api/user/update-user/1", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedUser),
+      });
+      const body = await res.json();
+      expect(body.message).toBe("Updated user Successfuly");
+      expect(res.status).toBe(200);
+    });
+
+    it("/update-user Should handle invalid user ID", async () => {
+      const updatedUser = {
+        username: "Basil",
+      };
+      const res = await app.request("/api/user/update-user/abc", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedUser),
+      });
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.message).toBe("Invalid User Id");
+    });
+
+    it("/update-user Should handle no data provided", async () => {
+      const res = await app.request("/api/user/update-user/1", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.message).toBe("No data provided");
+    });
+
+    it("/update-user Should handle user not found", async () => {
+      const updatedUser = {
+        username: "Basil",
+      };
+      (mockDb.update as any).mockReturnValue(mockDb);
+      (mockDb.set as any).mockReturnValue(mockDb);
+      (mockDb.where as any).mockReturnValue(mockDb);
+      (mockDb.returning as any).mockResolvedValue([]);
+
+      const res = await app.request("/api/user/update-user/999", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedUser),
+      });
+      expect(res.status).toBe(404);
+      const body = await res.json();
+      expect(body.message).toBe("User not found ");
+    });
+
+    it("/update-user Should handle database error", async () => {
+      const updatedUser = {
+        username: "Basil",
+      };
+      (mockDb.update as any).mockReturnValue(mockDb);
+      (mockDb.set as any).mockReturnValue(mockDb);
+      (mockDb.where as any).mockReturnValue(mockDb);
+      (mockDb.returning as any).mockRejectedValue(new Error("Database error"));
+
+      const res = await app.request("/api/user/update-user/1", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedUser),
+      });
+      expect(res.status).toBe(500);
+      const body = await res.json();
+      expect(body.message).toBe("Couldn't update the user");
+    });
+
+    it("/update-user Should handle invalid email in update", async () => {
+      const updatedUser = {
+        email: "invalid-email",
+      };
+      const res = await app.request("/api/user/update-user/1", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedUser),
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it("/update-user Should handle empty username in update", async () => {
+      const updatedUser = {
+        username: "",
+      };
+      const res = await app.request("/api/user/update-user/1", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedUser),
+      });
+      expect(res.status).toBe(400);
     });
   });
   describe("DELETE /api/user", () => {
@@ -205,6 +456,167 @@ describe("User Routes", () => {
       const body = await res.json();
       expect(res.status).toBe(200);
       expect(body.message).toBe("User deleted Successfully ");
+    });
+
+    it("/delete-user/:id Should delete user without posts", async () => {
+      const mockUsers = [
+        {
+          id: 1,
+          username: "Ahmed",
+          email: "test@test.com",
+        },
+      ];
+
+      (mockDb.select as any).mockReturnValue(mockDb);
+      (mockDb.from as any).mockReturnValue(mockDb);
+      (mockDb.where as any).mockResolvedValueOnce([]); // No posts
+
+      (mockDb.delete as any).mockReturnValue(mockDb);
+      (mockDb.where as any).mockReturnValue(mockDb);
+      (mockDb.returning as any).mockResolvedValue(mockUsers);
+      const res = await app.request("/api/user/delete-user/1", {
+        method: "DELETE",
+      });
+      const body = await res.json();
+      expect(res.status).toBe(200);
+      expect(body.message).toBe("User deleted Successfully ");
+    });
+
+    it("/delete-user/:id Should delete user with posts without images", async () => {
+      const mockUsers = [
+        {
+          id: 1,
+          username: "Ahmed",
+          email: "test@test.com",
+        },
+      ];
+
+      const mockUsersPost = [
+        {
+          imageKey: null,
+        },
+        {
+          imageKey: null,
+        },
+      ];
+      (mockDb.select as any).mockReturnValue(mockDb);
+      (mockDb.from as any).mockReturnValue(mockDb);
+      (mockDb.where as any).mockResolvedValueOnce(mockUsersPost);
+
+      (mockDb.delete as any).mockReturnValue(mockDb);
+      (mockDb.where as any).mockReturnValue(mockDb);
+      (mockDb.returning as any).mockResolvedValue(mockUsers);
+      const res = await app.request("/api/user/delete-user/1", {
+        method: "DELETE",
+      });
+      const body = await res.json();
+      expect(res.status).toBe(200);
+      expect(body.message).toBe("User deleted Successfully ");
+      expect(minioDeleteMock.deleteImageFromMinio).not.toHaveBeenCalled();
+    });
+
+    it("/delete-user/:id Should handle invalid user ID", async () => {
+      const res = await app.request("/api/user/delete-user/abc", {
+        method: "DELETE",
+      });
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.message).toBe("id is invalid");
+    });
+
+    it("/delete-user/:id Should handle user not found", async () => {
+      (mockDb.select as any).mockReturnValue(mockDb);
+      (mockDb.from as any).mockReturnValue(mockDb);
+      (mockDb.where as any).mockResolvedValueOnce([]); // No posts
+
+      (mockDb.delete as any).mockReturnValue(mockDb);
+      (mockDb.where as any).mockReturnValue(mockDb);
+      (mockDb.returning as any).mockResolvedValue([]); // User not found
+
+      const res = await app.request("/api/user/delete-user/999", {
+        method: "DELETE",
+      });
+      expect(res.status).toBe(404);
+      const body = await res.json();
+      expect(body.message).toBe("User not found ");
+    });
+
+    it("/delete-user/:id Should handle database error during post lookup", async () => {
+      (mockDb.select as any).mockReturnValue(mockDb);
+      (mockDb.from as any).mockReturnValue(mockDb);
+      (mockDb.where as any).mockRejectedValue(new Error("Database error"));
+
+      const res = await app.request("/api/user/delete-user/1", {
+        method: "DELETE",
+      });
+      expect(res.status).toBe(500);
+      const body = await res.json();
+      expect(body.message).toBe("Something went wrong");
+    });
+
+    it("/delete-user/:id Should handle database error during user deletion", async () => {
+      (mockDb.select as any).mockReturnValue(mockDb);
+      (mockDb.from as any).mockReturnValue(mockDb);
+      (mockDb.where as any).mockResolvedValueOnce([]); // No posts
+
+      (mockDb.delete as any).mockReturnValue(mockDb);
+      (mockDb.where as any).mockReturnValue(mockDb);
+      (mockDb.returning as any).mockRejectedValue(new Error("Database error"));
+
+      const res = await app.request("/api/user/delete-user/1", {
+        method: "DELETE",
+      });
+      expect(res.status).toBe(500);
+      const body = await res.json();
+      expect(body.message).toBe("Something went wrong");
+    });
+
+    it("/delete-user/:id Should handle MinIO deletion error", async () => {
+      const mockUsers = [
+        {
+          id: 1,
+          username: "Ahmed",
+          email: "test@test.com",
+        },
+      ];
+
+      const mockUsersPost = [
+        {
+          imageKey: "images/dummy.png",
+        },
+      ];
+
+      minioDeleteMock.deleteImageFromMinio.mockRejectedValue(
+        new Error("MinIO error")
+      );
+
+      (mockDb.select as any).mockReturnValue(mockDb);
+      (mockDb.from as any).mockReturnValue(mockDb);
+      (mockDb.where as any).mockResolvedValueOnce(mockUsersPost);
+
+      const res = await app.request("/api/user/delete-user/1", {
+        method: "DELETE",
+      });
+      expect(res.status).toBe(500);
+      const body = await res.json();
+      expect(body.message).toBe("Something went wrong");
+    });
+
+    it("/delete-user/:id Should handle zero user ID", async () => {
+      (mockDb.select as any).mockReturnValue(mockDb);
+      (mockDb.from as any).mockReturnValue(mockDb);
+      (mockDb.where as any).mockResolvedValueOnce([]); // No posts
+
+      (mockDb.delete as any).mockReturnValue(mockDb);
+      (mockDb.where as any).mockReturnValue(mockDb);
+      (mockDb.returning as any).mockResolvedValue([]); // User not found
+
+      const res = await app.request("/api/user/delete-user/0", {
+        method: "DELETE",
+      });
+      expect(res.status).toBe(404);
+      const body = await res.json();
+      expect(body.message).toBe("User not found ");
     });
   });
 });
