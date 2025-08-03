@@ -34,7 +34,6 @@ interface Post {
   title: string;
   content: string;
   imageKey: string;
-  onCreated: () => void;
 }
 
 interface HomeProps {
@@ -52,7 +51,7 @@ function AddPost({
   const [content, setContent] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [open, setOpen] = useState(false);
-  const queryCient = useQueryClient();
+  const queryClient = useQueryClient();
 
   const submitMutation = useMutation({
     mutationFn: async (e: React.FormEvent) => {
@@ -69,7 +68,7 @@ function AddPost({
       if (!res.ok) throw new Error(`Status ${res.status}`);
     },
     onSuccess: () => {
-      queryCient.invalidateQueries({ queryKey: ["posts", userId] });
+      queryClient.invalidateQueries({ queryKey: ["posts", userId] });
       setTitle("");
       setImage(null);
       setContent("");
@@ -98,7 +97,7 @@ function AddPost({
         </DialogHeader>
         <form onSubmit={(e) => submitMutation.mutate(e)} className="space-y-4">
           <div>
-            <Label htmlFor="email" className="mb-1.5 text-lg">
+            <Label htmlFor="title" className="mb-1.5 text-lg">
               Title
             </Label>
             <Input
@@ -111,7 +110,7 @@ function AddPost({
             />
           </div>
           <div>
-            <Label htmlFor="email" className="mb-1.5 text-lg">
+            <Label htmlFor="content" className="mb-1.5 text-lg">
               Content
             </Label>
             <Input
@@ -216,7 +215,7 @@ function Posts({
                   alt={post.title}
                 />
               ) : (
-                <Skeleton className="retlative   m-auto  my-3.5 h-[200px] bg-gray-400 w-[250px]" />
+                <Skeleton className="relative   m-auto  my-3.5 h-[200px] bg-gray-400 w-[250px]" />
               )}
               <p className="text-center font-stretch-75%">{post.content}</p>
             </div>

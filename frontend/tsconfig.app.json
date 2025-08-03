@@ -11,6 +11,11 @@
       "@/*": ["./src/*"]
     },
     /* Bundler mode */
+    "types": [
+      "vitest/globals",
+      "@testing-library/jest-dom",
+      "@testing-library/user-event"
+    ],
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
@@ -26,5 +31,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src"]
+  "include": ["src", "**/*.test.tsx", "**/*.test.ts"]
 }
