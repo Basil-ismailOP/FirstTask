@@ -42,6 +42,7 @@ export default function DeleteUser({
       onUserDelete();
     },
     onError: () => {
+      setError(true);
       console.log("Something went wrong couldn't delete");
     },
   });
@@ -85,7 +86,7 @@ export default function DeleteUser({
           </Button>
           <Button
             className="cursor-pointer hover:bg-gray-700"
-            onClick={() => navigate("/")}
+            onClick={() => {}}
           >
             go back
           </Button>

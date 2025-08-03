@@ -77,7 +77,7 @@ export default function CreateUser({ onUserCreated }: CreateUserProps) {
         <form onSubmit={uploadNewUser}>
           <div className="flex flex-col gap-6">
             <div>
-              <Label className="text-lg mb-1.5" htmlFor="email">
+              <Label className="text-lg mb-1.5" htmlFor="username">
                 Username
               </Label>
               <Input
