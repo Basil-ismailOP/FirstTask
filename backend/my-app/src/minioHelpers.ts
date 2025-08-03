@@ -1,18 +1,20 @@
-import { minioClient, BUCKET_NAME } from "./minio";
+import { client, BUCKET_NAME } from "./minio";
 import { v4 as uuidv4 } from "uuid";
+import "dotenv/config";
 
-export const getImageUrl = async (key: string): Promise<string> => {
+const S3_ENDPOINT = process.env.S3_ENDPOINT;
+
+export function getImageUrl(
+  key: string,
+  expiresInSeconds = 24 * 60 * 60
+): string {
   try {
-    const url = await minioClient.presignedGetObject(
-      BUCKET_NAME,
-      key,
-      24 * 60 * 60
-    );
-    return url;
-  } catch (error) {
+    return client.presign(key, { expiresIn: expiresInSeconds });
+  } catch {
     return "";
   }
-};
+}
+
 export const uploadImageToMinio = async (
   file: File
 ): Promise<{ uniqueKey: string; url: string }> => {
@@ -23,13 +25,14 @@ export const uploadImageToMinio = async (
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    await minioClient.putObject(BUCKET_NAME, uniqueKey, buffer, file.size, {
-      "Content-Type": file.type,
+    await client.write(uniqueKey, buffer, {
+      bucket: BUCKET_NAME,
+      type: file.type,
     });
     const url = await getImageUrl(uniqueKey);
     return { uniqueKey, url };
   } catch (error) {
-    console.error(`Error uplodaing image: ${error}`);
+    console.error(`Error uploading image: ${error}`);
     throw new Error("Failed to upload Image");
   }
 };
@@ -37,13 +40,16 @@ export const uploadImageToMinio = async (
 export const deleteImageFromMinio = async (
   imageKey: string
 ): Promise<string | null> => {
-  try {
-    if (imageKey) {
-      await minioClient.removeObject(BUCKET_NAME, imageKey);
-      console.log(`Successfully deleted image: ${imageKey}`);
-    }
+  if (!imageKey) {
     return null;
-  } catch (error) {
-    return `Error deleting image: ${error}`;
+  }
+
+  try {
+    await client.delete(imageKey);
+    console.log(`Successfully deleted image: ${imageKey}`);
+    return null;
+  } catch (err: any) {
+    console.error(`Error deleting image:`, err);
+    return `Error deleting image: ${err.message ?? err}`;
   }
 };

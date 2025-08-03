@@ -1,24 +1,10 @@
 import "dotenv/config";
-import { Client } from "minio";
+import { S3Client, s3 } from "bun";
 
-export const minioClient = new Client({
-  endPoint: "localhost",
-  port: 9000,
-  useSSL: false,
-  accessKey: process.env.MINIO_ACCESS_KEY!,
-  secretKey: process.env.MINIO_SECRET_KEY!,
+export const client = new S3Client({
+  accessKeyId: process.env.S3_ACCESS_KEY_ID!,
+  secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
+  bucket: process.env.S3_BUCKET!,
+  endpoint: process.env.S3_ENDPOINT || "http://localhost:9000",
 });
-
 export const BUCKET_NAME = process.env.MINIO_BUCKET_NAME || "dummy";
-
-export const initializeBucket = async () => {
-  try {
-    const bucketExists = await minioClient.bucketExists(BUCKET_NAME);
-    if (!bucketExists) {
-      await minioClient.makeBucket(BUCKET_NAME);
-      console.log(`Bucket ${BUCKET_NAME} created successfully`);
-    }
-  } catch (error) {
-    console.error(`Error Initializing bucket: `, error);
-  }
-};

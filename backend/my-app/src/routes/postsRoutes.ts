@@ -9,9 +9,7 @@ import {
   deleteImageFromMinio,
   getImageUrl,
 } from "../minioHelpers";
-import { initializeBucket } from "../minio";
 
-initializeBucket();
 export const postsRoutes = new Hono()
   .get("/", async (c) => {
     try {
@@ -35,6 +33,7 @@ export const postsRoutes = new Hono()
       if (!post.length) return c.json({ message: "No post found" }, 404);
       if (post[0].imageKey)
         post[0].imageKey = await getImageUrl(post[0].imageKey);
+      console.log(post[0].imageKey);
       return c.json({ post });
     } catch (error) {
       return c.json({ message: "Something went wrong" }, 500);
