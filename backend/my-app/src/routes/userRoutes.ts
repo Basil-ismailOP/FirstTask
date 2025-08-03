@@ -95,10 +95,7 @@ export const userRoutes = new Hono()
         deleteUser: deleteUser[0],
       });
     } catch (error) {
-      return c.json(
-        { message: "Something went wrong", error, status: 200 },
-        500
-      );
+      return c.json({ message: "Something went wrong", error }, 500);
     }
   });
 
