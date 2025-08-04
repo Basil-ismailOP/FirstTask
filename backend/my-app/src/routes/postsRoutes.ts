@@ -10,6 +10,9 @@ import {
   getImageUrl,
 } from "../minioHelpers";
 
+import { producer } from "..";
+import { CompressionTypes } from "kafkajs";
+
 export const postsRoutes = new Hono()
   .get("/", async (c) => {
     try {
@@ -76,6 +79,11 @@ export const postsRoutes = new Hono()
           imageKey: uniqueKey,
         })
         .returning();
+      producer.send({
+        topic: "test-topic",
+        compression: CompressionTypes.Snappy,
+        messages: [{ value: `New post created with id ${newPost[0].id}` }],
+      });
       return c.json({ message: "Post uploaded Successfully", newPost });
     } catch (error) {
       return c.json({ message: "Something went wrong creating new post" }, 500);
