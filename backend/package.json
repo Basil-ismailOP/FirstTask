@@ -6,6 +6,7 @@
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage"
   },
+  "packageManager": "bun@1.2.0",
   "dependencies": {
     "@hono/zod-validator": "^0.7.2",
     "@types/kafkajs-snappy": "^1.0.0",
