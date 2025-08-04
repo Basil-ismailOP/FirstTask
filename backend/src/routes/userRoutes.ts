@@ -12,6 +12,7 @@ export const userRoutes = new Hono()
       const users = await db.select().from(usersTable);
       return c.json({ users });
     } catch (error) {
+      console.error("Error fetching users:", error);
       return c.json({ message: "Failed to load users", error }, 500);
     }
   })

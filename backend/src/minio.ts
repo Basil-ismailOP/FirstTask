@@ -7,4 +7,4 @@ export const client = new S3Client({
   bucket: process.env.S3_BUCKET!,
   endpoint: process.env.S3_ENDPOINT || "http://localhost:9000",
 });
-export const BUCKET_NAME = process.env.MINIO_BUCKET_NAME || "dummy";
+export const BUCKET_NAME = process.env.S3_BUCKET || "dummy";

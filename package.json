@@ -1,4 +1,10 @@
 {
+  "packageManager": "bun@1.2.0",
+  "workspaces": [
+    "frontend",
+    "backend",
+    "kafkaConsumer"
+  ],
   "dependencies": {
     "minio": "^8.0.5",
     "pg": "^8.16.3",
@@ -6,6 +12,7 @@
     "uuid": "^11.1.0"
   },
   "devDependencies": {
-    "@types/minio": "^7.1.1"
+    "@types/minio": "^7.1.1",
+    "turbo": "^2.5.5"
   }
 }
