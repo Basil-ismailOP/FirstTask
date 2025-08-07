@@ -279,12 +279,14 @@ export default function Home({ users }: HomeProps) {
     <>
       <Table className="text-center w-full">
         <TableCaption>Users and their posts</TableCaption>
-        <TableHeader className="">
+        <TableHeader className="bg-gray-950 ">
           <TableRow>
             <TableHead> </TableHead>
-            <TableHead className="text-center w-[100px]">name</TableHead>
-            <TableHead className="text-center">Email</TableHead>
-            <TableHead className="text-center">View Posts</TableHead>
+            <TableHead className="text-center  text-white w-[100px]">
+              name
+            </TableHead>
+            <TableHead className="text-center text-white">Email</TableHead>
+            <TableHead className="text-center text-white">View Posts</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
